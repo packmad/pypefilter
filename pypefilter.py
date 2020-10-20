@@ -2,10 +2,12 @@
 import argparse
 import hashlib
 import os
-import magic
+import magic  # pip3 install python-magic
 import shutil
 import sys
 
+from multiprocessing import Pool, freeze_support
+from itertools import repeat
 from os.path import isdir, isfile, join
 
 
@@ -28,31 +30,36 @@ def pe_filter(pe_magic: str) -> bool:
     return pe_magic.startswith('PE32') and not any(x in pe_magic for x in ['DLL', '.Net', 'Installer', 'ARM'])
 
 
+def check(file_path: str, dst_folder: str, remove_not_matching: bool):
+    file_magic = None
+    if is_pe(file_path):
+        file_magic = magic.from_file(file_path)
+        if pe_filter(file_magic):
+            if dst_folder is not None:
+                try:
+                    dst_file_sha256 = join(dst_folder, f'{get_file_sha256sum(file_path)}')
+                    if not isfile(dst_file_sha256):
+                        shutil.copyfile(file_path, dst_file_sha256)
+                        print(f'[{file_magic}] {file_path} -> {dst_file_sha256}')
+                except Exception as e:
+                    print(f'[{file_magic}] {file_path} !!!', file=sys.stderr)
+                    print(e, file=sys.stderr)
+            return
+    if remove_not_matching:
+        print(f'[{file_magic}] {file_path} -> /dev/null')
+        os.remove(file_path)
+
+
 def main(start_folder: str, dst_folder: str, remove_not_matching: bool):
     for root, dirs, files in os.walk(start_folder, topdown=False):
         print('>>>', root)
-        for name in files:
-            file_path = join(root, name)
-            file_magic = None
-            if is_pe(file_path):
-                file_magic = magic.from_file(file_path)
-                if pe_filter(file_magic):
-                    if dst_folder is not None:
-                        try:
-                            dst_file_sha256 = join(dst_folder, f'{get_file_sha256sum(file_path)}')
-                            if not isfile(dst_file_sha256):
-                                shutil.copyfile(file_path, dst_file_sha256)
-                                print(f'[{file_magic}] {file_path} -> {dst_file_sha256}')
-                        except Exception as e:
-                            print(f'[{file_magic}] {file_path} !!!', file=sys.stderr)
-                            print(e, file=sys.stderr)
-                    continue
-            if remove_not_matching:
-                print(f'[{file_magic}] {file_path} -> /dev/null')
-                os.remove(file_path)
+        file_paths = [join(root, name) for name in files]
+        with Pool() as pool:
+            pool.starmap(check, zip(file_paths, repeat(dst_folder), repeat(remove_not_matching)))
 
 
 if __name__ == '__main__':
+    freeze_support()
     parser = argparse.ArgumentParser(description='pypefilter.py filters out non-native Portable Executable files')
     parser.add_argument('-s', '--src', help='Source directory', type=str, required=True)
     parser.add_argument('-d', '--dst', help='Destination directory', type=str)
