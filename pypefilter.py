@@ -69,6 +69,6 @@ if __name__ == '__main__':
     if args.dst is not None:
         assert isdir(args.dst)
     if args.dst is None and not args.delete:
-        print('You are not copying or deleting... save energy!', file=sys.stderr)
+        sys.exit('You are not copying or deleting... save energy!')
 
     main(args.src, args.dst, args.delete)
