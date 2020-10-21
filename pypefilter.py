@@ -50,12 +50,12 @@ def check(file_path: str, dst_folder: str, remove_not_matching: bool):
         os.remove(file_path)
 
 
-def main(start_folder: str, dst_folder: str, remove_not_matching: bool):
-    for root, dirs, files in os.walk(start_folder, topdown=False):
-        print('>>>', root)
-        file_paths = [join(root, name) for name in files]
-        with Pool() as pool:
-            pool.starmap(check, zip(file_paths, repeat(dst_folder), repeat(remove_not_matching)))
+def main(start_folder: str, dst_folder: str, delete: bool):
+    with Pool() as pool:
+        for root, dirs, files in os.walk(start_folder, topdown=False):
+            print('>>>', root)
+            pool.starmap(check, zip([join(root, name) for name in files], repeat(dst_folder), repeat(delete)))
+            print('<<<', root)
 
 
 if __name__ == '__main__':
