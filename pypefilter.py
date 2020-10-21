@@ -9,6 +9,7 @@ import sys
 from multiprocessing import Pool, freeze_support
 from itertools import repeat
 from os.path import isdir, isfile, join
+from pathlib import Path
 
 
 def get_file_sha256sum(file_path: str) -> str:
@@ -30,31 +31,39 @@ def pe_filter(pe_magic: str) -> bool:
     return pe_magic.startswith('PE32') and not any(x in pe_magic for x in ['DLL', '.Net', 'Installer', 'ARM'])
 
 
-def check(file_path: str, dst_folder: str, remove_not_matching: bool):
+def get_parent_folder(file_path: str) -> str:
+    return str()
+
+
+def check(file_path: str, dst_folder: str, remove_not_matching: bool, rename: bool):
     file_magic = None
     if is_pe(file_path):
         file_magic = magic.from_file(file_path)
         if pe_filter(file_magic):
+            file_sha256sum = get_file_sha256sum(file_path)
             if dst_folder is not None:
                 try:
-                    dst_file_sha256 = join(dst_folder, f'{get_file_sha256sum(file_path)}')
+                    dst_file_sha256 = join(dst_folder, f'{file_sha256sum}')
                     if not isfile(dst_file_sha256):
                         shutil.copyfile(file_path, dst_file_sha256)
                         print(f'[{file_magic}] {file_path} -> {dst_file_sha256}')
                 except Exception as e:
                     print(f'[{file_magic}] {file_path} !!!', file=sys.stderr)
                     print(e, file=sys.stderr)
+            if rename:
+                os.rename(file_path, join(Path(file_path).parent, file_sha256sum))
             return
     if remove_not_matching:
         print(f'[{file_magic}] {file_path} -> /dev/null')
         os.remove(file_path)
 
 
-def main(start_folder: str, dst_folder: str, delete: bool):
+def main(start_folder: str, dst_folder: str, delete: bool, rename: bool):
     with Pool() as pool:
         for root, dirs, files in os.walk(start_folder, topdown=False):
             print('>>>', root)
-            pool.starmap(check, zip([join(root, name) for name in files], repeat(dst_folder), repeat(delete)))
+            pool.starmap(check,
+                         zip([join(root, name) for name in files], repeat(dst_folder), repeat(delete), repeat(rename)))
             print('<<<', root)
 
 
@@ -63,12 +72,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='pypefilter.py filters out non-native Portable Executable files')
     parser.add_argument('-s', '--src', help='Source directory', type=str, required=True)
     parser.add_argument('-d', '--dst', help='Destination directory', type=str)
+    parser.add_argument('--rename', help='Rename matching files with their sha256 hash', action='store_true')
     parser.add_argument('--delete', help='Delete non-matching files', action='store_true')
     args = parser.parse_args()
     assert isdir(args.src)
     if args.dst is not None:
         assert isdir(args.dst)
-    if args.dst is None and not args.delete:
-        sys.exit('You are not copying or deleting... save energy!')
+    if args.dst is None and not args.delete and not args.rename:
+        sys.exit('You are not copying|renaming|deleting... save energy!')
 
-    main(args.src, args.dst, args.delete)
+    main(args.src, args.dst, args.delete, args.rename)
