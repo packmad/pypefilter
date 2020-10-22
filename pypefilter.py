@@ -15,9 +15,9 @@ from pathlib import Path
 VERBOSE = False
 
 
-def vprint(msg: str):
+def vprint(action: str, fmagic: str, src: str, dst: str):
     if VERBOSE:
-        print(msg)
+        print(f'[{action}][{fmagic}] {src} -> {dst}')
 
 
 def get_file_sha256sum(file_path: str) -> str:
@@ -50,17 +50,17 @@ def check(file_path: str, dst_folder: str, remove_not_matching: bool, rename: bo
                     dst_file_sha256 = join(dst_folder, f'{file_sha256sum}')
                     if not isfile(dst_file_sha256):
                         shutil.copyfile(file_path, dst_file_sha256)
-                        vprint(f'[C][{file_magic}] {file_path} -> {dst_file_sha256}')
+                        vprint('C', file_magic, file_path, dst_file_sha256)
                 except Exception as e:
                     print(f'[!][{file_magic}] {file_path}', file=sys.stderr)
                     print(e, file=sys.stderr)
             if rename:
                 dst_path = join(Path(file_path).parent, file_sha256sum)
-                vprint(f'[R][{file_magic}] {file_path} -> {dst_path}')
+                vprint('R', file_magic, file_path, dst_path)
                 os.rename(file_path, dst_path)
             return
     if remove_not_matching:
-        vprint(f'[X][{file_magic}] {file_path} -> /dev/null')
+        vprint('X', file_magic, file_path, '/dev/null')
         os.remove(file_path)
 
 
