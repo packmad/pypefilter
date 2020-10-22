@@ -13,10 +13,13 @@ from pathlib import Path
 
 
 VERBOSE = False
+VERBOSE_MAGIC = False
 
 
 def vprint(action: str, fmagic: str, src: str, dst: str):
     if VERBOSE:
+        if VERBOSE_MAGIC and fmagic is None:
+            fmagic = magic.from_file(src)
         print(f'[{action}][{fmagic}] {src} -> {dst}')
 
 
@@ -41,25 +44,28 @@ def pe_filter(pe_magic: str) -> bool:
 
 def check(file_path: str, dst_folder: str, remove_not_matching: bool, rename: bool):
     file_magic = None
+    is_native_pe = False
     if is_pe(file_path):
         file_magic = magic.from_file(file_path)
         if pe_filter(file_magic):
-            file_sha256sum = get_file_sha256sum(file_path)
-            if dst_folder is not None:
-                try:
-                    dst_file_sha256 = join(dst_folder, f'{file_sha256sum}')
-                    if not isfile(dst_file_sha256):
-                        shutil.copyfile(file_path, dst_file_sha256)
-                        vprint('C', file_magic, file_path, dst_file_sha256)
-                except Exception as e:
-                    print(f'[!][{file_magic}] {file_path}', file=sys.stderr)
-                    print(e, file=sys.stderr)
-            if rename:
-                dst_path = join(Path(file_path).parent, file_sha256sum)
-                vprint('R', file_magic, file_path, dst_path)
-                os.rename(file_path, dst_path)
-            return
-    if remove_not_matching:
+            is_native_pe = True
+            if rename or dst_folder is not None:
+                file_sha256sum = get_file_sha256sum(file_path)
+                if dst_folder is not None:
+                    try:
+                        dst_file_sha256 = join(dst_folder, f'{file_sha256sum}')
+                        if not isfile(dst_file_sha256):
+                            shutil.copyfile(file_path, dst_file_sha256)
+                            vprint('C', file_magic, file_path, dst_file_sha256)
+                    except Exception as e:
+                        print(f'[!][{file_magic}] {file_path}', file=sys.stderr)
+                        print(e, file=sys.stderr)
+                if rename:
+                    dst_path = join(Path(file_path).parent, file_sha256sum)
+                    if file_path != dst_path:
+                        vprint('R', file_magic, file_path, dst_path)
+                        os.rename(file_path, dst_path)
+    if remove_not_matching and not is_native_pe:
         vprint('X', file_magic, file_path, '/dev/null')
         os.remove(file_path)
 
@@ -76,16 +82,20 @@ def main(start_folder: str, dst_folder: str, delete: bool, rename: bool):
 if __name__ == '__main__':
     freeze_support()
     parser = argparse.ArgumentParser(description='pypefilter.py filters out non-native Portable Executable files')
-    parser.add_argument('-s', '--src', help='Source directory', type=str, required=True)
-    parser.add_argument('-d', '--dst', help='Destination directory', type=str)
+    parser.add_argument('-s', '--src', type=str, help='Source directory', required=True)
+    parser.add_argument('-d', '--dst', type=str, help='Destination directory')
     parser.add_argument('--rename', help='Rename matching files with their sha256 hash', action='store_true')
     parser.add_argument('--delete', help='Delete non-matching files', action='store_true')
-    parser.add_argument('-v', '--verbose', help='Display messages', action='store_true')
+    me_group = parser.add_mutually_exclusive_group()
+    me_group.add_argument('-v', '--verbose', help='Display messages', action='store_true')
+    me_group.add_argument('-vm', '--vmagic', help='Display messages and magic of non-matching files',
+                          action='store_true')
     args = parser.parse_args()
     assert isdir(args.src)
     if args.dst is not None:
         assert isdir(args.dst)
     if args.dst is None and not args.delete and not args.rename:
         sys.exit('You are not copying|renaming|deleting... save energy!')
-    VERBOSE = args.verbose
+    VERBOSE = args.verbose or args.vmagic
+    VERBOSE_MAGIC = args.vmagic
     main(args.src, args.dst, args.delete, args.rename)
