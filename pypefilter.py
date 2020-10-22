@@ -12,6 +12,14 @@ from os.path import isdir, isfile, join
 from pathlib import Path
 
 
+VERBOSE = False
+
+
+def vprint(msg: str):
+    if VERBOSE:
+        print(msg)
+
+
 def get_file_sha256sum(file_path: str) -> str:
     hash_function = hashlib.sha256()
     with open(file_path, 'rb', buffering=0) as f:
@@ -31,10 +39,6 @@ def pe_filter(pe_magic: str) -> bool:
     return pe_magic.startswith('PE32') and not any(x in pe_magic for x in ['DLL', '.Net', 'Installer', 'ARM'])
 
 
-def get_parent_folder(file_path: str) -> str:
-    return str()
-
-
 def check(file_path: str, dst_folder: str, remove_not_matching: bool, rename: bool):
     file_magic = None
     if is_pe(file_path):
@@ -46,15 +50,17 @@ def check(file_path: str, dst_folder: str, remove_not_matching: bool, rename: bo
                     dst_file_sha256 = join(dst_folder, f'{file_sha256sum}')
                     if not isfile(dst_file_sha256):
                         shutil.copyfile(file_path, dst_file_sha256)
-                        print(f'[{file_magic}] {file_path} -> {dst_file_sha256}')
+                        vprint(f'[C][{file_magic}] {file_path} -> {dst_file_sha256}')
                 except Exception as e:
-                    print(f'[{file_magic}] {file_path} !!!', file=sys.stderr)
+                    print(f'[!][{file_magic}] {file_path}', file=sys.stderr)
                     print(e, file=sys.stderr)
             if rename:
-                os.rename(file_path, join(Path(file_path).parent, file_sha256sum))
+                dst_path = join(Path(file_path).parent, file_sha256sum)
+                vprint(f'[R][{file_magic}] {file_path} -> {dst_path}')
+                os.rename(file_path, dst_path)
             return
     if remove_not_matching:
-        print(f'[{file_magic}] {file_path} -> /dev/null')
+        vprint(f'[X][{file_magic}] {file_path} -> /dev/null')
         os.remove(file_path)
 
 
@@ -74,11 +80,12 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dst', help='Destination directory', type=str)
     parser.add_argument('--rename', help='Rename matching files with their sha256 hash', action='store_true')
     parser.add_argument('--delete', help='Delete non-matching files', action='store_true')
+    parser.add_argument('-v', '--verbose', help='Display messages', action='store_true')
     args = parser.parse_args()
     assert isdir(args.src)
     if args.dst is not None:
         assert isdir(args.dst)
     if args.dst is None and not args.delete and not args.rename:
         sys.exit('You are not copying|renaming|deleting... save energy!')
-
+    VERBOSE = args.verbose
     main(args.src, args.dst, args.delete, args.rename)
