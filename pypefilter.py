@@ -30,7 +30,7 @@ def get_file_sha256sum(file_path: str) -> str:
 
 def is_pe(file_path: str) -> bool:
     try:
-        return isfile(file_path) and open(file_path, 'rb').read(2) == b'MZ'
+        return open(file_path, 'rb').read(2) == b'MZ'
     except Exception:
         return False
 
