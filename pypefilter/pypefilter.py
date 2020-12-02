@@ -70,7 +70,7 @@ def check(file_path: str, dst_folder: str, remove_not_matching: bool, rename: bo
         os.remove(file_path)
 
 
-def main(start_folder: str, dst_folder: str, delete: bool, rename: bool):
+def parallel_filter(start_folder: str, dst_folder: str, delete: bool, rename: bool):
     with Pool() as pool:
         for root, dirs, files in os.walk(start_folder, topdown=False):
             print('>>>', root)
@@ -79,9 +79,9 @@ def main(start_folder: str, dst_folder: str, delete: bool, rename: bool):
             print('<<<', root)
 
 
-if __name__ == '__main__':
+def main():
     freeze_support()
-    parser = argparse.ArgumentParser(description='pypefilter.py filters out non-native Portable Executable files')
+    parser = argparse.ArgumentParser(description='PyPEfilter filters out non-native Portable Executable files')
     parser.add_argument('-s', '--src', type=str, help='Source directory', required=True)
     parser.add_argument('-d', '--dst', type=str, help='Destination directory')
     parser.add_argument('--rename', help='Rename matching files with their sha256 hash', action='store_true')
@@ -98,4 +98,8 @@ if __name__ == '__main__':
         sys.exit('You are not copying|renaming|deleting... save energy!')
     VERBOSE = args.verbose or args.vmagic
     VERBOSE_MAGIC = args.vmagic
-    main(args.src, args.dst, args.delete, args.rename)
+    parallel_filter(args.src, args.dst, args.delete, args.rename)
+
+
+if __name__ == '__main__':
+    main()
