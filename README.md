@@ -16,10 +16,15 @@ optional arguments:
   -vm, --vmagic      Display messages and magic of non-matching files
 ```
 
-PyPEfilter filters out non-native (DLLs, .Net, Installer, ARM, ...) Portable Executable files from `--src` directory.
+PyPEfilter filters out non-native (DLLs, .Net, Installer, ...) Portable Executable files from `--src` directory.
 
 If `--dst` directory is provided, it copies all the matching PE files from `--src` to `--dst`, and renames the files in the destination directory with their sha256 hash.
 
 Specifying:
 *  `--rename`: it renames the matching PE files in `--src` with their sha256 hash
 *  `--delete`: it deletes the non-matching PE files from `--src`
+
+
+### Disclaimer
+This script is based on [python-magic](https://pypi.org/project/python-magic/), a Python interface to the libmagic file type identification library.
+Therefore, for example, it does not identify all types of installers.
