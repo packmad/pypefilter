@@ -24,6 +24,12 @@ Specifying:
 *  `--rename`: it renames the matching PE files in `--src` with their sha256 hash
 *  `--delete`: it deletes the non-matching PE files from `--src`
 
+### Installation
+PyPEfilter is available at [PyPI](https://pypi.org/project/pypefilter/)
+
+```
+pip3 install pypefilter
+```
 
 ### Disclaimer
 This script is based on [python-magic](https://pypi.org/project/python-magic/), a Python interface to the libmagic file type identification library.
