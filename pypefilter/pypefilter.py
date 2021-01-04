@@ -12,6 +12,7 @@ from os.path import isdir, isfile, join
 from pathlib import Path
 
 
+BLACKLIST = ['DLL', '.Net', 'Installer', 'ARM']
 VERBOSE = False
 VERBOSE_MAGIC = False
 
@@ -39,7 +40,7 @@ def is_pe(file_path: str) -> bool:
 
 
 def pe_filter(pe_magic: str) -> bool:
-    return pe_magic.startswith('PE32') and not any(x in pe_magic for x in ['DLL', '.Net', 'Installer', 'ARM'])
+    return pe_magic.startswith('PE32') and not any(x in pe_magic for x in BLACKLIST)
 
 
 def check(file_path: str, dst_folder: str, remove_not_matching: bool, rename: bool):
@@ -80,12 +81,14 @@ def parallel_filter(start_folder: str, dst_folder: str, delete: bool, rename: bo
 
 
 def main():
+    global BLACKLIST, VERBOSE, VERBOSE_MAGIC
     freeze_support()
     parser = argparse.ArgumentParser(description='PyPEfilter filters out non-native Portable Executable files')
     parser.add_argument('-s', '--src', type=str, help='Source directory', required=True)
     parser.add_argument('-d', '--dst', type=str, help='Destination directory')
     parser.add_argument('--rename', help='Rename matching files with their sha256 hash', action='store_true')
     parser.add_argument('--delete', help='Delete non-matching files', action='store_true')
+    parser.add_argument('--no64', help='Exclude PE for the 64bit arch', action='store_true')
     me_group = parser.add_mutually_exclusive_group()
     me_group.add_argument('-v', '--verbose', help='Display messages', action='store_true')
     me_group.add_argument('-vm', '--vmagic', help='Display messages and magic of non-matching files',
@@ -96,6 +99,8 @@ def main():
         assert isdir(args.dst)
     if args.dst is None and not args.delete and not args.rename:
         sys.exit('You are not copying|renaming|deleting... save energy!')
+    if args.no64:
+        BLACKLIST.append('x86-64')
     VERBOSE = args.verbose or args.vmagic
     VERBOSE_MAGIC = args.vmagic
     parallel_filter(args.src, args.dst, args.delete, args.rename)
