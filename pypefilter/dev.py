@@ -28,3 +28,10 @@ if not isfile(exe_files_json):
 
     with open(exe_files_json, 'w') as fp:
         json.dump(exe_files, fp)
+
+with open(exe_files_json, 'r') as fp:
+    exe_files = json.load(fp)
+
+for exe in exe_files:
+    with open(exe, 'rb') as fp:
+        assert fp.read(2) == b'MZ'
