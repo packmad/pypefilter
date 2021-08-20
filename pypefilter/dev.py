@@ -58,7 +58,7 @@ def main():
         exe_files = json.load(fp)
 
     with Pool() as pool:
-        results = list(tqdm(pool.imap(task, exe_files), total=exe_files))
+        results = list(tqdm(pool.imap(task, exe_files), total=len(exe_files)))
 
     print(Counter(results))
 
