@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 start_folder = "/mnt/c"; assert isdir(start_folder)
-dst_folder = '/mnt/c/stmp'
+dst_folder = '/mnt/c/stmp'; assert isdir(dst_folder)
 exe_files_json = 'exe_files.json'
 
 
