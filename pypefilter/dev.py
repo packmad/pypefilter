@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 start_folder = "C:\\"; assert isdir(start_folder)
-dst_folder = 'S:\\'; assert isdir(dst_folder)
+dst_folder = 'S:\\goodware2021'; assert isdir(dst_folder)
 exe_files_json = 'exe_files.json'
 
 
