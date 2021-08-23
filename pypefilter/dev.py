@@ -16,8 +16,8 @@ from os.path import isdir, isfile, join
 from pathlib import Path
 
 
-start_folder = "/mnt/c"; assert isdir(start_folder)
-dst_folder = '/mnt/c/stmp'; assert isdir(dst_folder)
+start_folder = "C:\\"; assert isdir(start_folder)
+dst_folder = 'S:\\'; assert isdir(dst_folder)
 exe_files_json = 'exe_files.json'
 
 
@@ -42,7 +42,13 @@ def get_file_sha256sum(file_path: str) -> str:
 def task(exe: str) -> Optional[bool]:
     try:
         sha256 = get_file_sha256sum(exe)
-        dst_file_sha256 = join(dst_folder, sha256)
+        file_magic = magic.from_file(exe)
+        if '.Net' in file_magic:
+            dst_file_sha256 = join(join(dst_folder, 'dotNet'), sha256)
+        elif 'Installer' in file_magic or 'ARM' in file_magic:
+            return False
+        else:
+            dst_file_sha256 = join(join(dst_folder, 'native'), sha256)
         if isfile(dst_file_sha256): return False
         shutil.copyfile(exe, dst_file_sha256)
         return True
@@ -52,16 +58,17 @@ def task(exe: str) -> Optional[bool]:
 
 def main():
     if not isfile(exe_files_json):
+        print('> Start creating json')
         create_exe_json()
+        print('< End creating json')
 
     with open(exe_files_json, 'r') as fp:
         exe_files = json.load(fp)
-
-    with Pool() as pool:
+    print('> json loaded, starting copy')
+    with Pool(processes=3) as pool:
         results = list(tqdm(pool.imap(task, exe_files), total=len(exe_files)))
 
     print(Counter(results))
-
 
 
 if __name__ == '__main__':
