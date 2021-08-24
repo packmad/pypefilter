@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 start_folder = "C:\\"; assert isdir(start_folder)
-dst_folder = 'S:\\goodware2021'; assert isdir(dst_folder)
+dst_folder = 'M:\\goodware2021'; assert isdir(dst_folder)
 exe_files_json = 'exe_files.json'
 
 
@@ -51,6 +51,7 @@ def task(exe: str) -> Optional[bool]:
             dst_file_sha256 = join(join(dst_folder, 'native'), sha256)
         if isfile(dst_file_sha256): return False
         shutil.copyfile(exe, dst_file_sha256)
+        print(dst_file_sha256)
         return True
     except:
         return None
