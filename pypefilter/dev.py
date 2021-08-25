@@ -16,8 +16,8 @@ from os.path import isdir, isfile, join
 from pathlib import Path
 
 
-start_folder = "C:\\"; assert isdir(start_folder)
-dst_folder = 'M:\\goodware2021'; assert isdir(dst_folder)
+start_folder = "/mnt/c/"; assert isdir(start_folder)
+dst_folder = '/mnt/c/goodware2021/'; assert isdir(dst_folder)
 exe_files_json = 'exe_files.json'
 
 
@@ -41,6 +41,7 @@ def get_file_sha256sum(file_path: str) -> str:
 
 def task(exe: str) -> Optional[bool]:
     try:
+        exe = exe.replace('C:\\', '/mnt/c/').replace('\\', '/')
         sha256 = get_file_sha256sum(exe)
         file_magic = magic.from_file(exe)
         if '.Net' in file_magic:
