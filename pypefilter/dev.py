@@ -12,20 +12,20 @@ from collections import Counter
 from tqdm import tqdm
 from multiprocessing import Pool, freeze_support
 from itertools import repeat
-from os.path import isdir, isfile, join
+from os.path import isdir, isfile, join, basename
 from pathlib import Path
 
 
 start_folder = "/mnt/c/"; assert isdir(start_folder)
-dst_folder = '/mnt/c/goodware2021/'; assert isdir(dst_folder)
-exe_files_json = 'exe_files.json'
+dst_folder = '/mnt/c/goodware2021/dlls'; assert isdir(dst_folder)
+exe_files_json = 'dll_files.json'
 
 
 def create_exe_json():
     exe_files = list()
     for root, dirs, files in os.walk(start_folder, topdown=False):
         for name in files:
-            if name.endswith(('exe', 'EXE')):
+            if name.endswith(('dll', 'DLL')):
                 exe_files.append(join(root, name))
     with open(exe_files_json, 'w') as fp:
         json.dump(exe_files, fp)
@@ -58,6 +58,17 @@ def task(exe: str) -> Optional[bool]:
         return None
 
 
+def taskdll(exe: str) -> Optional[bool]:
+    try:
+        dst_file_sha256 = join(dst_folder, f'{basename(exe)}_{get_file_sha256sum(exe)}')
+        if isfile(dst_file_sha256): return False
+        shutil.copyfile(exe, dst_file_sha256)
+        print(dst_file_sha256)
+        return True
+    except:
+        return None
+
+
 def main():
     if not isfile(exe_files_json):
         print('> Start creating json')
@@ -67,8 +78,8 @@ def main():
     with open(exe_files_json, 'r') as fp:
         exe_files = json.load(fp)
     print('> json loaded, starting copy')
-    with Pool(processes=3) as pool:
-        results = list(tqdm(pool.imap(task, exe_files), total=len(exe_files)))
+    with Pool(processes=4) as pool:
+        results = list(tqdm(pool.imap(taskdll, exe_files), total=len(exe_files)))
 
     print(Counter(results))
 
