@@ -83,7 +83,7 @@ def parallel_filter(start_folder: str, dst_folder: str):
             print('<<<', root)
 
 
-if __name__ == '__main__':
+def main():
     global BLACKLIST, VERBOSE, VERBOSE_MAGIC, DELETE, RENAME, DST_FOLDER
     freeze_support()
     parser = argparse.ArgumentParser(
@@ -113,3 +113,7 @@ if __name__ == '__main__':
     RENAME = args.rename
     DST_FOLDER = args.dst
     parallel_filter(args.src)
+
+
+if __name__ == '__main__':
+    main()
