@@ -74,7 +74,7 @@ def check(file_path: str):
     return file_magic
 
 
-def parallel_filter(start_folder: str, dst_folder: str):
+def parallel_filter(start_folder: str):
     with Pool(processes=4) as pool:
         for root, dirs, files in os.walk(start_folder, topdown=False):
             print('>>>', root)
@@ -104,7 +104,7 @@ def main():
     if args.dst is not None:
         assert isdir(args.dst)
     if args.dst is None and not args.delete and not args.rename:
-        sys.exit('You are not copying|renaming|deleting... save energy!')
+        sys.exit('You are not copying|renaming|deleting anything... save energy!')
     if args.no64:
         BLACKLIST.append('x86-64')
     VERBOSE = args.verbose or args.vmagic
