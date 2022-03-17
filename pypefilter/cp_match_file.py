@@ -14,12 +14,14 @@ def main(file_list: str, src_dir: str, dst_dir: str):
     print('file_list has #', len(fnames), 'entries')
 
     for root, dirs, files in os.walk(src_dir, topdown=False):
+        print('>>>', root)
         for f in files:
             if f in fnames:
                 src_file = join(root, f)
                 dst_file = join(dst_dir, f)
                 shutil.copyfile(src_file, dst_file)
                 print(src_file, '->', dst_file)
+        print('<<<', root)
 
 
 if __name__ == '__main__':
