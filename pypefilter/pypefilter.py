@@ -1,4 +1,5 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+
 import argparse
 import hashlib
 import os
@@ -20,7 +21,7 @@ RENAME: bool = False
 VERBOSE: bool = False
 VERBOSE_MAGIC: bool = False
 DST_FOLDER: Optional[str] = None
-BLACKLIST = ['DLL', '.Net', 'Installer', 'ARM']
+BLACKLIST = ['DLL', '.Net', 'Install', 'ARM']
 
 
 def vprint(action: str, fmagic: str, src: str, dst: str):
